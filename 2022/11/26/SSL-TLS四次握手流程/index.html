@@ -16,24 +16,25 @@
   <meta name="author" content="Eskiii">
   <meta name="keywords" content="">
   
-    <meta name="description" content="这是一篇测试文章">
+    <meta name="description" content="SSL&#x2F;TLS 四次握手流程第一次握手：ClientHello客户端向服务端发送加密通信请求，发送 ClientHello 请求报文，报文包括：  客户端支持的SSL&#x2F;TLS 协议版本 客户端产生的随机数 client random，后面用于生成通信密钥 客户端支持的加密算法列表  第二次握手：ServerHello服务端响应客户端，回送客户端 ServerHello 报文，报">
 <meta property="og:type" content="article">
-<meta property="og:title" content="测试文章">
-<meta property="og:url" content="http://example.com/2022/11/25/%E6%B5%8B%E8%AF%95%E6%96%87%E7%AB%A0/index.html">
+<meta property="og:title" content="SSL&#x2F;TLS四次握手流程">
+<meta property="og:url" content="http://example.com/2022/11/26/SSL-TLS%E5%9B%9B%E6%AC%A1%E6%8F%A1%E6%89%8B%E6%B5%81%E7%A8%8B/index.html">
 <meta property="og:site_name" content="雯晴的小站">
-<meta property="og:description" content="这是一篇测试文章">
+<meta property="og:description" content="SSL&#x2F;TLS 四次握手流程第一次握手：ClientHello客户端向服务端发送加密通信请求，发送 ClientHello 请求报文，报文包括：  客户端支持的SSL&#x2F;TLS 协议版本 客户端产生的随机数 client random，后面用于生成通信密钥 客户端支持的加密算法列表  第二次握手：ServerHello服务端响应客户端，回送客户端 ServerHello 报文，报">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="http://example.com/2022/11/25/%E6%B5%8B%E8%AF%95%E6%96%87%E7%AB%A0/elena.jpg">
-<meta property="article:published_time" content="2022-11-25T13:00:31.000Z">
-<meta property="article:modified_time" content="2022-11-25T13:10:42.629Z">
+<meta property="og:image" content="http://example.com/2022/11/26/SSL-TLS%E5%9B%9B%E6%AC%A1%E6%8F%A1%E6%89%8B%E6%B5%81%E7%A8%8B/ssl%E6%8F%A1%E6%89%8B%E6%B5%81%E7%A8%8B.png">
+<meta property="og:image" content="http://example.com/2022/11/26/SSL-TLS%E5%9B%9B%E6%AC%A1%E6%8F%A1%E6%89%8B%E6%B5%81%E7%A8%8B/CA%E8%AF%81%E4%B9%A6%E6%A0%A1%E9%AA%8C%E8%BF%87%E7%A8%8B.png">
+<meta property="article:published_time" content="2022-11-26T08:19:20.000Z">
+<meta property="article:modified_time" content="2022-11-26T08:32:12.431Z">
 <meta property="article:author" content="Eskiii">
 <meta property="article:tag" content="原创">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="http://example.com/2022/11/25/%E6%B5%8B%E8%AF%95%E6%96%87%E7%AB%A0/elena.jpg">
+<meta name="twitter:image" content="http://example.com/2022/11/26/SSL-TLS%E5%9B%9B%E6%AC%A1%E6%8F%A1%E6%89%8B%E6%B5%81%E7%A8%8B/ssl%E6%8F%A1%E6%89%8B%E6%B5%81%E7%A8%8B.png">
   
   
   
-  <title>测试文章 - 雯晴的小站</title>
+  <title>SSL/TLS四次握手流程 - 雯晴的小站</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -198,7 +199,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="测试文章"></span>
+            <span id="subtitle" data-typed-text="SSL/TLS四次握手流程"></span>
           
         </div>
 
@@ -209,8 +210,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2022-11-25 21:00" pubdate>
-          2022年11月25日 晚上
+        <time datetime="2022-11-26 16:19" pubdate>
+          2022年11月26日 下午
         </time>
       </span>
     
@@ -221,7 +222,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          8 字
+          1.3k 字
         
       </span>
     
@@ -232,7 +233,7 @@
         
         
         
-          1 分钟
+          12 分钟
         
       </span>
     
@@ -270,12 +271,63 @@
         <div id="board">
           <article class="post-content mx-auto">
             <!-- SEO header -->
-            <h1 style="display: none">测试文章</h1>
+            <h1 style="display: none">SSL/TLS四次握手流程</h1>
             
             
               <div class="markdown-body">
                 
-                <h1 id="这是一篇测试文章"><a href="#这是一篇测试文章" class="headerlink" title="这是一篇测试文章"></a>这是一篇测试文章</h1><img src="/2022/11/25/%E6%B5%8B%E8%AF%95%E6%96%87%E7%AB%A0/elena.jpg" srcset="/img/loading.gif" lazyload class="">
+                <h1 id="SSL-x2F-TLS-四次握手流程"><a href="#SSL-x2F-TLS-四次握手流程" class="headerlink" title="SSL&#x2F;TLS 四次握手流程"></a>SSL&#x2F;TLS 四次握手流程</h1><h2 id="第一次握手：ClientHello"><a href="#第一次握手：ClientHello" class="headerlink" title="第一次握手：ClientHello"></a>第一次握手：ClientHello</h2><p>客户端向服务端发送加密通信请求，发送 ClientHello 请求报文，报文包括：</p>
+<ol>
+<li>客户端支持的SSL&#x2F;TLS 协议版本</li>
+<li>客户端产生的随机数 client random，后面用于生成通信密钥</li>
+<li>客户端支持的加密算法列表</li>
+</ol>
+<h2 id="第二次握手：ServerHello"><a href="#第二次握手：ServerHello" class="headerlink" title="第二次握手：ServerHello"></a>第二次握手：ServerHello</h2><p>服务端响应客户端，回送客户端 ServerHello 报文，报文包括：</p>
+<ol>
+<li>确认 SSL&#x2F;TLS 协议版本，如果客户端浏览器不支持则直接关闭通话</li>
+<li>服务端产生的随机数 server random，后面也用于生成通信密钥</li>
+<li>确认可以使用的加密算法列表</li>
+<li>服务的CA认证证书</li>
+</ol>
+<h2 id="第三次握手：客户端计算出会话密钥"><a href="#第三次握手：客户端计算出会话密钥" class="headerlink" title="第三次握手：客户端计算出会话密钥"></a>第三次握手：客户端计算出会话密钥</h2><p>客户端收到服务端的 ServerHello 报文后，首先将进行一系列的校验和计算操作：</p>
+<ol>
+<li><p>通过浏览器或者操作系统中内置的 CA 公钥<strong>检验服务端CA证书的真实性</strong></p>
+</li>
+<li><p>如果证书没有问题，那么客户端就会从内置的CA公钥中的数字证书中取出服务器的公钥，并使用公钥加密当前报文，然后向服务端发送以下信息：</p>
+</li>
+<li><p>生成的一个随机数 pre-master key，这个随机数会被客户端方的公钥加密（服务端使用私钥解密取出这个随机数）</p>
+</li>
+<li><p>加密算法改变通知，表示在这之后的信息都将用会话密钥加密通信</p>
+</li>
+<li><p>客户端握手结束通知，表示客户端的握手阶段已经结束。这一项同时把之前所有内容的发生的数据做个摘要，用来供服务端校验。</p>
+</li>
+</ol>
+<p>到这里，客户端已经有了三个随机数：client random、server random 和 pre-master key，客户端根据这三个随机数和确定的加密算法，就能计算出会话密钥</p>
+<h2 id="第四次握手：服务端计算出会话密钥"><a href="#第四次握手：服务端计算出会话密钥" class="headerlink" title="第四次握手：服务端计算出会话密钥"></a>第四次握手：服务端计算出会话密钥</h2><p>服务器收到客户端回应报文之后，<strong>使用私钥对报文进行解密</strong>：</p>
+<ol>
+<li>取出第三个随机数 pre-master key，使用三个随机数和确定的加密算法计算出会话密钥</li>
+<li>加密通信算法改变通知，表示随后的信息都将用会话密钥加密通信</li>
+<li>服务端握手结束通知。这一项同时把之前所有内容的发生的数据做个摘要，用来供客户端校验。</li>
+</ol>
+<p>四次握手后，整个 SSL&#x2F;TLS 的握手阶段就全部结束了，接下来客户端和服务端就使用会话密钥来进行加密通信。完整流程如下图所示：</p>
+<img src="/2022/11/26/SSL-TLS%E5%9B%9B%E6%AC%A1%E6%8F%A1%E6%89%8B%E6%B5%81%E7%A8%8B/ssl%E6%8F%A1%E6%89%8B%E6%B5%81%E7%A8%8B.png" srcset="/img/loading.gif" lazyload class="">
+
+<p></p>
+<h2 id="客户端校验数字证书的流程"><a href="#客户端校验数字证书的流程" class="headerlink" title="客户端校验数字证书的流程"></a>客户端校验数字证书的流程</h2><p><img src="/2022/11/26/SSL-TLS%E5%9B%9B%E6%AC%A1%E6%8F%A1%E6%89%8B%E6%B5%81%E7%A8%8B/CA%E8%AF%81%E4%B9%A6%E6%A0%A1%E9%AA%8C%E8%BF%87%E7%A8%8B.png" srcset="/img/loading.gif" lazyload class=""></p>
+<p><strong>CA 证书包括 持有者信息 和 CA签名 两部分。</strong></p>
+<p><strong>CA 签发证书的过程，如上图左边部分：</strong></p>
+<ul>
+<li>首先 CA 会把持有者的公钥、用途、颁发者、有效时间等信息打成一个包，然后对这些信息进行 Hash 计算，得到一个 Hash 值；</li>
+<li>然后 <strong>CA 会使用自己的私钥将该 Hash 值加密，生成 Certificate Signature</strong>，也就是 CA 对证书做了签名；</li>
+<li>最后将 Certificate Signature 添加在文件证书上，形成数字证书；</li>
+</ul>
+<p><strong>客户端校验服务端的数字证书的过程，如上图右边部分：</strong></p>
+<p>客户端会先进行一些简单的验证，比如是否能在内置证书中找到对应的合法机构证书，证书有效期，然后重要验证步骤如下：</p>
+<ul>
+<li><strong>首先客户端会使用同样的 Hash 算法获取该证书的 Hash 值 H1；</strong></li>
+<li>通常浏览器和操作系统中内置了 CA 的公钥信息，<strong>浏览器收到证书后可以使用 CA 的公钥解密 Certificate Signature 内容，得到一个 Hash 值 H2 ；</strong></li>
+<li>最后比较 H1 和 H2，如果值相同，则为可信赖的证书，否则则认为证书不可信。</li>
+</ul>
 
                 
               </div>
@@ -294,7 +346,7 @@
     
       <span class="category-chain">
         
-  <a href="/categories/Java/" class="category-chain-item">Java</a>
+  <a href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" class="category-chain-item">计算机网络</a>
   
   
 
@@ -321,8 +373,8 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>测试文章</div>
-      <div>http://example.com/2022/11/25/测试文章/</div>
+      <div>SSL/TLS四次握手流程</div>
+      <div>http://example.com/2022/11/26/SSL-TLS四次握手流程/</div>
     </div>
     <div class="license-meta">
       
@@ -334,7 +386,7 @@
       
         <div class="license-meta-item license-meta-date">
           <div>发布于</div>
-          <div>2022年11月25日</div>
+          <div>2022年11月26日</div>
         </div>
       
       
@@ -366,18 +418,12 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2022/11/26/SSL-TLS%E5%9B%9B%E6%AC%A1%E6%8F%A1%E6%89%8B%E6%B5%81%E7%A8%8B/" title="SSL/TLS四次握手流程">
-                        <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">SSL/TLS四次握手流程</span>
-                        <span class="visible-mobile">上一篇</span>
-                      </a>
-                    
                   </article>
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2022/11/25/hello-world/" title="Hello World">
-                        <span class="hidden-mobile">Hello World</span>
+                      <a href="/2022/11/25/%E6%B5%8B%E8%AF%95%E6%96%87%E7%AB%A0/" title="测试文章">
+                        <span class="hidden-mobile">测试文章</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
