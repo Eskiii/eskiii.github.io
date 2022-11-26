@@ -225,6 +225,67 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h1 class="index-header">
         
+        <a href="/2022/11/26/HashMap%E7%9A%84%E6%AD%BB%E5%BE%AA%E7%8E%AF%E6%98%AF%E6%80%8E%E4%B9%88%E4%BA%A7%E7%94%9F%E7%9A%84/" target="_self">
+          HashMap的死循环是怎么产生的
+        </a>
+      </h1>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2022/11/26/HashMap%E7%9A%84%E6%AD%BB%E5%BE%AA%E7%8E%AF%E6%98%AF%E6%80%8E%E4%B9%88%E4%BA%A7%E7%94%9F%E7%9A%84/" target="_self">
+        <div>
+          HashMap 的死循环是怎么产生的？ HashMap的死循环问题是在 jdk1.7 （及之前）的时候产生的。当时版本的 HashMap 使用链表 + 头插法来解决hash冲突，但在多线程并发的环境下会产生 node间死循环。  Rehash首先我们要对 hashmap 的扩容机制有一些了解，关于详细的扩容机制之后再补充。现在我们只需要关注当 put 元素进map时，size大于map的阈值的情况
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2022-11-26 16:50" pubdate>
+              2022-11-26
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Java/" class="category-chain-item">Java</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E5%8E%9F%E5%88%9B/">#原创</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h1 class="index-header">
+        
         <a href="/2022/11/26/LengthFieldBasedFrameDecode%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" target="_self">
           LengthFieldBasedFrameDecode源码阅读
         </a>

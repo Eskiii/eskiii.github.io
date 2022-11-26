@@ -1,0 +1,679 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Eskiii">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="HashMap 的死循环是怎么产生的？ HashMap的死循环问题是在 jdk1.7 （及之前）的时候产生的。当时版本的 HashMap 使用链表 + 头插法来解决hash冲突，但在多线程并发的环境下会产生 node间死循环。  Rehash首先我们要对 hashmap 的扩容机制有一些了解，关于详细的扩容机制之后再补充。现在我们只需要关注当 put 元素进map时，size大于map的阈值的情况">
+<meta property="og:type" content="article">
+<meta property="og:title" content="HashMap的死循环是怎么产生的">
+<meta property="og:url" content="http://example.com/2022/11/26/HashMap%E7%9A%84%E6%AD%BB%E5%BE%AA%E7%8E%AF%E6%98%AF%E6%80%8E%E4%B9%88%E4%BA%A7%E7%94%9F%E7%9A%84/index.html">
+<meta property="og:site_name" content="雯晴的小站">
+<meta property="og:description" content="HashMap 的死循环是怎么产生的？ HashMap的死循环问题是在 jdk1.7 （及之前）的时候产生的。当时版本的 HashMap 使用链表 + 头插法来解决hash冲突，但在多线程并发的环境下会产生 node间死循环。  Rehash首先我们要对 hashmap 的扩容机制有一些了解，关于详细的扩容机制之后再补充。现在我们只需要关注当 put 元素进map时，size大于map的阈值的情况">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://example.com/2022/11/26/HashMap%E7%9A%84%E6%AD%BB%E5%BE%AA%E7%8E%AF%E6%98%AF%E6%80%8E%E4%B9%88%E4%BA%A7%E7%94%9F%E7%9A%84/p1.png">
+<meta property="og:image" content="http://example.com/2022/11/26/HashMap%E7%9A%84%E6%AD%BB%E5%BE%AA%E7%8E%AF%E6%98%AF%E6%80%8E%E4%B9%88%E4%BA%A7%E7%94%9F%E7%9A%84/p2.png">
+<meta property="og:image" content="http://example.com/2022/11/26/HashMap%E7%9A%84%E6%AD%BB%E5%BE%AA%E7%8E%AF%E6%98%AF%E6%80%8E%E4%B9%88%E4%BA%A7%E7%94%9F%E7%9A%84/p3.png">
+<meta property="og:image" content="http://example.com/2022/11/26/HashMap%E7%9A%84%E6%AD%BB%E5%BE%AA%E7%8E%AF%E6%98%AF%E6%80%8E%E4%B9%88%E4%BA%A7%E7%94%9F%E7%9A%84/p4.png">
+<meta property="og:image" content="http://example.com/2022/11/26/HashMap%E7%9A%84%E6%AD%BB%E5%BE%AA%E7%8E%AF%E6%98%AF%E6%80%8E%E4%B9%88%E4%BA%A7%E7%94%9F%E7%9A%84/p5.png">
+<meta property="og:image" content="http://example.com/2022/11/26/HashMap%E7%9A%84%E6%AD%BB%E5%BE%AA%E7%8E%AF%E6%98%AF%E6%80%8E%E4%B9%88%E4%BA%A7%E7%94%9F%E7%9A%84/p6.png">
+<meta property="og:image" content="http://example.com/2022/11/26/HashMap%E7%9A%84%E6%AD%BB%E5%BE%AA%E7%8E%AF%E6%98%AF%E6%80%8E%E4%B9%88%E4%BA%A7%E7%94%9F%E7%9A%84/p7.png">
+<meta property="article:published_time" content="2022-11-26T08:50:30.000Z">
+<meta property="article:modified_time" content="2022-11-26T09:20:02.142Z">
+<meta property="article:author" content="Eskiii">
+<meta property="article:tag" content="原创">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="http://example.com/2022/11/26/HashMap%E7%9A%84%E6%AD%BB%E5%BE%AA%E7%8E%AF%E6%98%AF%E6%80%8E%E4%B9%88%E4%BA%A7%E7%94%9F%E7%9A%84/p1.png">
+  
+  
+  
+  <title>HashMap的死循环是怎么产生的 - 雯晴的小站</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"example.com","root":"/","version":"1.9.3","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>雯晴的小站</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                分类
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="HashMap的死循环是怎么产生的"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-11-26 16:50" pubdate>
+          2022年11月26日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          3.2k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          27 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">HashMap的死循环是怎么产生的</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="HashMap-的死循环是怎么产生的？"><a href="#HashMap-的死循环是怎么产生的？" class="headerlink" title="HashMap 的死循环是怎么产生的？"></a>HashMap 的死循环是怎么产生的？</h1><blockquote>
+<p>HashMap的死循环问题是在 jdk1.7 （及之前）的时候产生的。<br>当时版本的 HashMap 使用链表 + 头插法来解决hash冲突，但在多线程并发的环境下会产生 node间死循环。</p>
+</blockquote>
+<h2 id="Rehash"><a href="#Rehash" class="headerlink" title="Rehash"></a>Rehash</h2><p>首先我们要对 hashmap 的扩容机制有一些了解，关于详细的扩容机制之后再补充。现在我们只需要关注当 put 元素进map时，size大于map的阈值的情况：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> V <span class="hljs-title function_">put</span><span class="hljs-params">(K key, V value)</span><br>&#123;<br>    ......<br>    <span class="hljs-comment">//算Hash值</span><br>    <span class="hljs-type">int</span> <span class="hljs-variable">hash</span> <span class="hljs-operator">=</span> hash(key.hashCode());<br>    <span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> indexFor(hash, table.length);<br>    <span class="hljs-comment">//如果该key已被插入，则替换掉旧的value （链接操作）</span><br>    <span class="hljs-keyword">for</span> (Entry&lt;K,V&gt; e = table[i]; e != <span class="hljs-literal">null</span>; e = e.next) &#123;<br>        Object k;<br>        <span class="hljs-keyword">if</span> (e.hash == hash &amp;&amp; ((k = e.key) == key || key.equals(k))) &#123;<br>            <span class="hljs-type">V</span> <span class="hljs-variable">oldValue</span> <span class="hljs-operator">=</span> e.value;<br>            e.value = value;<br>            e.recordAccess(<span class="hljs-built_in">this</span>);<br>            <span class="hljs-keyword">return</span> oldValue;<br>        &#125;<br>    &#125;<br>    modCount++;<br>    <span class="hljs-comment">// 上面可以忽略</span><br>    <span class="hljs-comment">//该key不存在，需要增加一个结点</span><br>    addEntry(hash, key, value, i);<br>    <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">void</span> <span class="hljs-title function_">addEntry</span><span class="hljs-params">(<span class="hljs-type">int</span> hash, K key, V value, <span class="hljs-type">int</span> bucketIndex)</span><br>&#123;<br>    Entry&lt;K,V&gt; e = table[bucketIndex];<br>    table[bucketIndex] = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Entry</span>&lt;K,V&gt;(hash, key, value, e);<br>    <span class="hljs-comment">//查看当前的size是否超过了我们设定的阈值threshold，如果超过，需要resize</span><br>    <span class="hljs-keyword">if</span> (size++ &gt;= threshold)<br>        resize(<span class="hljs-number">2</span> * table.length);<br>&#125; <br></code></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">void</span> <span class="hljs-title function_">resize</span><span class="hljs-params">(<span class="hljs-type">int</span> newCapacity)</span><br>&#123;<br>    Entry[] oldTable = table;<br>    <span class="hljs-type">int</span> <span class="hljs-variable">oldCapacity</span> <span class="hljs-operator">=</span> oldTable.length;<br>    ......<br>    <span class="hljs-comment">//创建一个新的Hash Table</span><br>    Entry[] newTable = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Entry</span>[newCapacity];<br>    <span class="hljs-comment">//将Old Hash Table上的数据迁移到New Hash Table上</span><br>    transfer(newTable);<br>    table = newTable;<br>    threshold = (<span class="hljs-type">int</span>)(newCapacity * loadFactor);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>当map的size大于阈值的时候，我们需要对 hashmap 进行扩容，即我们需要建立一个新的map，并将原本map中的所有元素都迁移到新map中，由于新的map是比之前大的，所以我们也需要对之前的每个元素进行重新的hash计算，也就是rehash（大小不同肯定要重新计算）:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">void</span> <span class="hljs-title function_">transfer</span><span class="hljs-params">(Entry[] newTable)</span><br>&#123;<br>    Entry[] src = table;<br>    <span class="hljs-type">int</span> <span class="hljs-variable">newCapacity</span> <span class="hljs-operator">=</span> newTable.length;<br>    <span class="hljs-comment">//下面这段代码的意思是：</span><br>    <span class="hljs-comment">//  从OldTable里摘一个元素出来，然后放到NewTable中</span><br>    <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">j</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; j &lt; src.length; j++) &#123;<br>        Entry&lt;K,V&gt; e = src[j];<br>        <span class="hljs-keyword">if</span> (e != <span class="hljs-literal">null</span>) &#123;<br>            src[j] = <span class="hljs-literal">null</span>;<br>            <span class="hljs-keyword">do</span> &#123;<br>                <span class="hljs-comment">// 将原本的元素使用头插法插到新表中对应位置的链表</span><br>                Entry&lt;K,V&gt; next = e.next;<br>                <span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> indexFor(e.hash, newCapacity);<br>                e.next = newTable[i];<br>                newTable[i] = e;<br>                e = next;<br>            &#125; <span class="hljs-keyword">while</span> (e != <span class="hljs-literal">null</span>);<br>        &#125;<br>    &#125;<br>&#125; <br></code></pre></td></tr></table></figure>
+
+<p>比如我们将原本的表扩容成 4 ：</p>
+<img src="/2022/11/26/HashMap%E7%9A%84%E6%AD%BB%E5%BE%AA%E7%8E%AF%E6%98%AF%E6%80%8E%E4%B9%88%E4%BA%A7%E7%94%9F%E7%9A%84/p1.png" srcset="/img/loading.gif" lazyload class="">
+
+<h2 id="多线程并发下的-rehash"><a href="#多线程并发下的-rehash" class="headerlink" title="多线程并发下的 rehash"></a>多线程并发下的 rehash</h2><p>同上一个例子，但是现在有两个线程都要对下面的原表扩容成 4 的新表：<br> <img src="/2022/11/26/HashMap%E7%9A%84%E6%AD%BB%E5%BE%AA%E7%8E%AF%E6%98%AF%E6%80%8E%E4%B9%88%E4%BA%A7%E7%94%9F%E7%9A%84/p2.png" srcset="/img/loading.gif" lazyload class=""></p>
+<p>（将resize的关键代码放在这）</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">void</span> <span class="hljs-title function_">transfer</span><span class="hljs-params">(Entry[] newTable)</span><br>&#123;<br>    Entry[] src = table;<br>    <span class="hljs-type">int</span> <span class="hljs-variable">newCapacity</span> <span class="hljs-operator">=</span> newTable.length;<br>    <span class="hljs-comment">//下面这段代码的意思是：</span><br>    <span class="hljs-comment">//  从OldTable里摘一个元素出来，然后放到NewTable中</span><br>    <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">j</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; j &lt; src.length; j++) &#123;<br>        Entry&lt;K,V&gt; e = src[j];<br>        <span class="hljs-keyword">if</span> (e != <span class="hljs-literal">null</span>) &#123;<br>            src[j] = <span class="hljs-literal">null</span>;<br>            <span class="hljs-keyword">do</span> &#123;<br>                <span class="hljs-comment">// 将原本的元素使用头插法插到新表中对应位置的链表</span><br>                Entry&lt;K,V&gt; next = e.next;<br>                <span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> indexFor(e.hash, newCapacity);<br>                e.next = newTable[i];<br>                newTable[i] = e;<br>                e = next;<br>            &#125; <span class="hljs-keyword">while</span> (e != <span class="hljs-literal">null</span>);<br>        &#125;<br>    &#125;<br>&#125; <br></code></pre></td></tr></table></figure>
+
+<p>首先，线程一先执行到了 13 行，这时被线程2抢占了cpu（hashmap是线程不安全的），也就是执行权到了线程2了（其实这时线程1还没做啥实际性工作），线程2咔咔就执行完了，就已经得到了一个新表了：</p>
+<img src="/2022/11/26/HashMap%E7%9A%84%E6%AD%BB%E5%BE%AA%E7%8E%AF%E6%98%AF%E6%80%8E%E4%B9%88%E4%BA%A7%E7%94%9F%E7%9A%84/p3.png" srcset="/img/loading.gif" lazyload class="">
+<p>线程2执行完后，执行权又回到了线程1这，线程1现在的状态是（也就是被抢占前的执行状态）：</p>
+<img src="/2022/11/26/HashMap%E7%9A%84%E6%AD%BB%E5%BE%AA%E7%8E%AF%E6%98%AF%E6%80%8E%E4%B9%88%E4%BA%A7%E7%94%9F%E7%9A%84/p4.png" srcset="/img/loading.gif" lazyload class="">
+<p>即 e 指向了 key&#x3D;3的节点，e.next 指向了 key&#x3D;7的节点。<br>线程 1 继续往下执行：<br>（1）14行：在新表的位置是 i&#x3D;3<br>（2）15-16行：头插法将 key&#x3D;3 的节点插入到了新表中，注意！只是指向了 key&#x3D;3这一个节点哦！<br>（3）现在轮到 e 指向 key&#x3D;7的节点，因为在被抢占前 e.next 就已经指向 key&#x3D;7的节点了</p>
+<img src="/2022/11/26/HashMap%E7%9A%84%E6%AD%BB%E5%BE%AA%E7%8E%AF%E6%98%AF%E6%80%8E%E4%B9%88%E4%BA%A7%E7%94%9F%E7%9A%84/p5.png" srcset="/img/loading.gif" lazyload class="">
+
+<p>现在 e 指向了 key&#x3D;7的节点，代码继续执行：<br>（1）13行：next 指向 key&#x3D;3 的节点！因为线程2已经将新表建好了，在新表中 7 节点的next是 3 节点<br>（2）14行：i 还是等于3<br>（3）15-16行：将 7节点插入到线程1建的新表的 i&#x3D;3位置上，注意现在在线程1的新表中i&#x3D;3的位置上是：7 -&gt; 3 -&gt; null，所以现在的 newTable[3] &#x3D; 7节点<br>（4）17行：e &#x3D; next，所以这时 e又指向了 3节点</p>
+<img src="/2022/11/26/HashMap%E7%9A%84%E6%AD%BB%E5%BE%AA%E7%8E%AF%E6%98%AF%E6%80%8E%E4%B9%88%E4%BA%A7%E7%94%9F%E7%9A%84/p6.png" srcset="/img/loading.gif" lazyload class="">
+<p>现在 e 指向了 key&#x3D;3的节点，代码继续执行：<br>（1）13行：next &#x3D; null<br>（2）14行：i 还是等于 3<br>（3）15行： e.next &#x3D; newTable[3]，所以 3 节点指向了 7 节点，这时循环链接出现了（因为在上一阶段，7 -&gt; 3）<br>（4）…. （后面就不说了。。）</p>
+<img src="/2022/11/26/HashMap%E7%9A%84%E6%AD%BB%E5%BE%AA%E7%8E%AF%E6%98%AF%E6%80%8E%E4%B9%88%E4%BA%A7%E7%94%9F%E7%9A%84/p7.png" srcset="/img/loading.gif" lazyload class="">
+
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>由于hashmap的扩容会需要对原表元素进行rehash，但是在多线程并发的情况下，jdk7的链表 + 头插法的做法，会使得在新表建立的过程中会可能出现节点间出现循环链接的现象。这个就是 hashmap的死循环问题。</p>
+<h2 id="解决办法"><a href="#解决办法" class="headerlink" title="解决办法"></a>解决办法</h2><p>使用 ConcurrentHashMap！<br>其他： HashTable、Collections.synchronizedHashMap&lt;&gt;()</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><p><a target="_blank" rel="noopener" href="https://coolshell.cn/articles/9606.html">疫苗：JAVA HASHMAP的死循环</a></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Java/" class="category-chain-item">Java</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E5%8E%9F%E5%88%9B/">#原创</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>HashMap的死循环是怎么产生的</div>
+      <div>http://example.com/2022/11/26/HashMap的死循环是怎么产生的/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>Eskiii</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2022年11月26日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2022/11/26/LengthFieldBasedFrameDecode%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" title="LengthFieldBasedFrameDecode源码阅读">
+                        <span class="hidden-mobile">LengthFieldBasedFrameDecode源码阅读</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
