@@ -16,25 +16,23 @@
   <meta name="author" content="Eskiii">
   <meta name="keywords" content="">
   
-    <meta name="description" content="SSL&#x2F;TLS 四次握手流程第一次握手：ClientHello客户端向服务端发送加密通信请求，发送 ClientHello 请求报文，报文包括：  客户端支持的SSL&#x2F;TLS 协议版本 客户端产生的随机数 client random，后面用于生成通信密钥 客户端支持的加密算法列表  第二次握手：ServerHello服务端响应客户端，回送客户端 ServerHello 报文，报">
+    <meta name="description" content="基于长度的解码器LengthFieldBasedFrameDecode源码阅读重要参数maxFrameLength     报文最大长度，超出则直接丢弃lengthFieldOffset    长度字段的偏移量，即报文长度字段的下标lengthFieldLength    报文长度字段的字节长度lengthAdjustment    长度字段的调整字段initialBytesToStrip">
 <meta property="og:type" content="article">
-<meta property="og:title" content="SSL&#x2F;TLS四次握手流程">
-<meta property="og:url" content="http://example.com/2022/11/26/SSL-TLS%E5%9B%9B%E6%AC%A1%E6%8F%A1%E6%89%8B%E6%B5%81%E7%A8%8B/index.html">
+<meta property="og:title" content="LengthFieldBasedFrameDecode源码阅读">
+<meta property="og:url" content="http://example.com/2022/11/26/LengthFieldBasedFrameDecode%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/index.html">
 <meta property="og:site_name" content="雯晴的小站">
-<meta property="og:description" content="SSL&#x2F;TLS 四次握手流程第一次握手：ClientHello客户端向服务端发送加密通信请求，发送 ClientHello 请求报文，报文包括：  客户端支持的SSL&#x2F;TLS 协议版本 客户端产生的随机数 client random，后面用于生成通信密钥 客户端支持的加密算法列表  第二次握手：ServerHello服务端响应客户端，回送客户端 ServerHello 报文，报">
+<meta property="og:description" content="基于长度的解码器LengthFieldBasedFrameDecode源码阅读重要参数maxFrameLength     报文最大长度，超出则直接丢弃lengthFieldOffset    长度字段的偏移量，即报文长度字段的下标lengthFieldLength    报文长度字段的字节长度lengthAdjustment    长度字段的调整字段initialBytesToStrip">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="http://example.com/2022/11/26/SSL-TLS%E5%9B%9B%E6%AC%A1%E6%8F%A1%E6%89%8B%E6%B5%81%E7%A8%8B/ssl%E6%8F%A1%E6%89%8B%E6%B5%81%E7%A8%8B.png">
-<meta property="og:image" content="http://example.com/2022/11/26/SSL-TLS%E5%9B%9B%E6%AC%A1%E6%8F%A1%E6%89%8B%E6%B5%81%E7%A8%8B/CA%E8%AF%81%E4%B9%A6%E6%A0%A1%E9%AA%8C%E8%BF%87%E7%A8%8B.png">
-<meta property="article:published_time" content="2022-11-26T08:19:20.000Z">
-<meta property="article:modified_time" content="2022-11-26T08:32:12.431Z">
+<meta property="article:published_time" content="2022-11-26T08:44:20.000Z">
+<meta property="article:modified_time" content="2022-11-26T08:47:05.871Z">
 <meta property="article:author" content="Eskiii">
 <meta property="article:tag" content="原创">
+<meta property="article:tag" content="源码阅读">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="http://example.com/2022/11/26/SSL-TLS%E5%9B%9B%E6%AC%A1%E6%8F%A1%E6%89%8B%E6%B5%81%E7%A8%8B/ssl%E6%8F%A1%E6%89%8B%E6%B5%81%E7%A8%8B.png">
   
   
   
-  <title>SSL/TLS四次握手流程 - 雯晴的小站</title>
+  <title>LengthFieldBasedFrameDecode源码阅读 - 雯晴的小站</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -199,7 +197,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="SSL/TLS四次握手流程"></span>
+            <span id="subtitle" data-typed-text="LengthFieldBasedFrameDecode源码阅读"></span>
           
         </div>
 
@@ -210,7 +208,7 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2022-11-26 16:19" pubdate>
+        <time datetime="2022-11-26 16:44" pubdate>
           2022年11月26日 下午
         </time>
       </span>
@@ -222,7 +220,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          1.3k 字
+          2.9k 字
         
       </span>
     
@@ -233,7 +231,7 @@
         
         
         
-          12 分钟
+          25 分钟
         
       </span>
     
@@ -271,63 +269,22 @@
         <div id="board">
           <article class="post-content mx-auto">
             <!-- SEO header -->
-            <h1 style="display: none">SSL/TLS四次握手流程</h1>
+            <h1 style="display: none">LengthFieldBasedFrameDecode源码阅读</h1>
             
             
               <div class="markdown-body">
                 
-                <h1 id="SSL-x2F-TLS-四次握手流程"><a href="#SSL-x2F-TLS-四次握手流程" class="headerlink" title="SSL&#x2F;TLS 四次握手流程"></a>SSL&#x2F;TLS 四次握手流程</h1><h2 id="第一次握手：ClientHello"><a href="#第一次握手：ClientHello" class="headerlink" title="第一次握手：ClientHello"></a>第一次握手：ClientHello</h2><p>客户端向服务端发送加密通信请求，发送 ClientHello 请求报文，报文包括：</p>
-<ol>
-<li>客户端支持的SSL&#x2F;TLS 协议版本</li>
-<li>客户端产生的随机数 client random，后面用于生成通信密钥</li>
-<li>客户端支持的加密算法列表</li>
-</ol>
-<h2 id="第二次握手：ServerHello"><a href="#第二次握手：ServerHello" class="headerlink" title="第二次握手：ServerHello"></a>第二次握手：ServerHello</h2><p>服务端响应客户端，回送客户端 ServerHello 报文，报文包括：</p>
-<ol>
-<li>确认 SSL&#x2F;TLS 协议版本，如果客户端浏览器不支持则直接关闭通话</li>
-<li>服务端产生的随机数 server random，后面也用于生成通信密钥</li>
-<li>确认可以使用的加密算法列表</li>
-<li>服务的CA认证证书</li>
-</ol>
-<h2 id="第三次握手：客户端计算出会话密钥"><a href="#第三次握手：客户端计算出会话密钥" class="headerlink" title="第三次握手：客户端计算出会话密钥"></a>第三次握手：客户端计算出会话密钥</h2><p>客户端收到服务端的 ServerHello 报文后，首先将进行一系列的校验和计算操作：</p>
-<ol>
-<li><p>通过浏览器或者操作系统中内置的 CA 公钥<strong>检验服务端CA证书的真实性</strong></p>
-</li>
-<li><p>如果证书没有问题，那么客户端就会从内置的CA公钥中的数字证书中取出服务器的公钥，并使用公钥加密当前报文，然后向服务端发送以下信息：</p>
-</li>
-<li><p>生成的一个随机数 pre-master key，这个随机数会被客户端方的公钥加密（服务端使用私钥解密取出这个随机数）</p>
-</li>
-<li><p>加密算法改变通知，表示在这之后的信息都将用会话密钥加密通信</p>
-</li>
-<li><p>客户端握手结束通知，表示客户端的握手阶段已经结束。这一项同时把之前所有内容的发生的数据做个摘要，用来供服务端校验。</p>
-</li>
-</ol>
-<p>到这里，客户端已经有了三个随机数：client random、server random 和 pre-master key，客户端根据这三个随机数和确定的加密算法，就能计算出会话密钥</p>
-<h2 id="第四次握手：服务端计算出会话密钥"><a href="#第四次握手：服务端计算出会话密钥" class="headerlink" title="第四次握手：服务端计算出会话密钥"></a>第四次握手：服务端计算出会话密钥</h2><p>服务器收到客户端回应报文之后，<strong>使用私钥对报文进行解密</strong>：</p>
-<ol>
-<li>取出第三个随机数 pre-master key，使用三个随机数和确定的加密算法计算出会话密钥</li>
-<li>加密通信算法改变通知，表示随后的信息都将用会话密钥加密通信</li>
-<li>服务端握手结束通知。这一项同时把之前所有内容的发生的数据做个摘要，用来供客户端校验。</li>
-</ol>
-<p>四次握手后，整个 SSL&#x2F;TLS 的握手阶段就全部结束了，接下来客户端和服务端就使用会话密钥来进行加密通信。完整流程如下图所示：</p>
-<img src="/2022/11/26/SSL-TLS%E5%9B%9B%E6%AC%A1%E6%8F%A1%E6%89%8B%E6%B5%81%E7%A8%8B/ssl%E6%8F%A1%E6%89%8B%E6%B5%81%E7%A8%8B.png" srcset="/img/loading.gif" lazyload class="">
+                <h1 id="基于长度的解码器LengthFieldBasedFrameDecode源码阅读"><a href="#基于长度的解码器LengthFieldBasedFrameDecode源码阅读" class="headerlink" title="基于长度的解码器LengthFieldBasedFrameDecode源码阅读"></a>基于长度的解码器LengthFieldBasedFrameDecode源码阅读</h1><h2 id="重要参数"><a href="#重要参数" class="headerlink" title="重要参数"></a>重要参数</h2><p>maxFrameLength     报文最大长度，超出则直接丢弃<br>lengthFieldOffset    长度字段的偏移量，即报文长度字段的下标<br>lengthFieldLength    报文长度字段的字节长度<br>lengthAdjustment    长度字段的调整字段<br>initialBytesToStrip    报文需要跳过的字节数（从头开始）<br><strong>其他：</strong><br>lengthFeildEndOffset 报文长度字段结束的字节下标</p>
+<h2 id="参数间的关系"><a href="#参数间的关系" class="headerlink" title="参数间的关系"></a>参数间的关系</h2><p>令 frameLength 为lengthField字段的值<br>lengthAdjustment + frameLength 为lengthField字段后到frame结尾的长度<br>initialBytesToStrip + lengthAdjustment + frameLength + lengthFeildEndOffset 为实际要读取的长度</p>
+<h2 id="解码方法-decode"><a href="#解码方法-decode" class="headerlink" title="解码方法 decode"></a>解码方法 decode</h2><p>decode方法的作用是根据所填入的参数，将应该读取到的完成frame从输入流ByteBuf中提取出来并返回，在读取的过程中利用五大参数对所要读取的字节流进行了一些基本的校验：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">protected</span> Object <span class="hljs-title function_">decode</span><span class="hljs-params">(ChannelHandlerContext ctx, ByteBuf in)</span> <span class="hljs-keyword">throws</span> Exception &#123;<br>    <span class="hljs-keyword">if</span> (discardingTooLongFrame) &#123;    <span class="hljs-comment">//先判断有没有要丢的字节</span><br>        discardingTooLongFrame(in);<br>    &#125;<br><br>    <span class="hljs-keyword">if</span> (in.readableBytes() &lt; lengthFieldEndOffset) &#123;    <span class="hljs-comment">//可读字节数不足</span><br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>;<br>    &#125;<br><br>    <span class="hljs-type">int</span> <span class="hljs-variable">actualLengthFieldOffset</span> <span class="hljs-operator">=</span> in.readerIndex() + lengthFieldOffset;<br>    <span class="hljs-type">long</span> <span class="hljs-variable">frameLength</span> <span class="hljs-operator">=</span> getUnadjustedFrameLength(in, actualLengthFieldOffset, lengthFieldLength, byteOrder);    <span class="hljs-comment">//读取出报文字段长度的值</span><br><br>    <span class="hljs-keyword">if</span> (frameLength &lt; <span class="hljs-number">0</span>) &#123;<br>        failOnNegativeLengthField(in, frameLength, lengthFieldEndOffset);<br>    &#125;<br><br>    <span class="hljs-comment">//报文实际长度</span><br>    frameLength += lengthAdjustment + lengthFieldEndOffset;<br><br>    <span class="hljs-keyword">if</span> (frameLength &lt; lengthFieldEndOffset) &#123;<br>        failOnFrameLengthLessThanLengthFieldEndOffset(in, frameLength, lengthFieldEndOffset);<br>    &#125;<br><br>    <span class="hljs-keyword">if</span> (frameLength &gt; maxFrameLength) &#123;    <span class="hljs-comment">//一旦超出了，那么本次frame肯定会被丢</span><br>        exceededFrameLength(in, frameLength);<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>;<br>    &#125;<br><br>    <span class="hljs-comment">// never overflows because it&#x27;s less than maxFrameLength</span><br>    <span class="hljs-type">int</span> <span class="hljs-variable">frameLengthInt</span> <span class="hljs-operator">=</span> (<span class="hljs-type">int</span>) frameLength;<br>    <span class="hljs-keyword">if</span> (in.readableBytes() &lt; frameLengthInt) &#123;    <span class="hljs-comment">//可读字节数不足</span><br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>;<br>    &#125;<br><br>    <span class="hljs-keyword">if</span> (initialBytesToStrip &gt; frameLengthInt) &#123;    <span class="hljs-comment">//要跳过的字节数大于报文长度，无法读取</span><br>        failOnFrameLengthLessThanInitialBytesToStrip(in, frameLength, initialBytesToStrip);<br>    &#125;<br>    in.skipBytes(initialBytesToStrip);    <span class="hljs-comment">//跳过initialBytesToStrip个字节</span><br><br>    <span class="hljs-comment">// extract frame</span><br>    <span class="hljs-type">int</span> <span class="hljs-variable">readerIndex</span> <span class="hljs-operator">=</span> in.readerIndex();    <span class="hljs-comment">//获取当前读下标</span><br>    <span class="hljs-type">int</span> <span class="hljs-variable">actualFrameLength</span> <span class="hljs-operator">=</span> frameLengthInt - initialBytesToStrip;    <span class="hljs-comment">// 最终报文长度</span><br>    <span class="hljs-type">ByteBuf</span> <span class="hljs-variable">frame</span> <span class="hljs-operator">=</span> extractFrame(ctx, in, readerIndex, actualFrameLength);<span class="hljs-comment">//提取报文</span><br>    in.readerIndex(readerIndex + actualFrameLength);    <span class="hljs-comment">//重置读下标</span><br>    <span class="hljs-keyword">return</span> frame;<br>&#125;<br></code></pre></td></tr></table></figure>
 
-<p></p>
-<h2 id="客户端校验数字证书的流程"><a href="#客户端校验数字证书的流程" class="headerlink" title="客户端校验数字证书的流程"></a>客户端校验数字证书的流程</h2><p><img src="/2022/11/26/SSL-TLS%E5%9B%9B%E6%AC%A1%E6%8F%A1%E6%89%8B%E6%B5%81%E7%A8%8B/CA%E8%AF%81%E4%B9%A6%E6%A0%A1%E9%AA%8C%E8%BF%87%E7%A8%8B.png" srcset="/img/loading.gif" lazyload class=""></p>
-<p><strong>CA 证书包括 持有者信息 和 CA签名 两部分。</strong></p>
-<p><strong>CA 签发证书的过程，如上图左边部分：</strong></p>
-<ul>
-<li>首先 CA 会把持有者的公钥、用途、颁发者、有效时间等信息打成一个包，然后对这些信息进行 Hash 计算，得到一个 Hash 值；</li>
-<li>然后 <strong>CA 会使用自己的私钥将该 Hash 值加密，生成 Certificate Signature</strong>，也就是 CA 对证书做了签名；</li>
-<li>最后将 Certificate Signature 添加在文件证书上，形成数字证书；</li>
-</ul>
-<p><strong>客户端校验服务端的数字证书的过程，如上图右边部分：</strong></p>
-<p>客户端会先进行一些简单的验证，比如是否能在内置证书中找到对应的合法机构证书，证书有效期，然后重要验证步骤如下：</p>
-<ul>
-<li><strong>首先客户端会使用同样的 Hash 算法获取该证书的 Hash 值 H1；</strong></li>
-<li>通常浏览器和操作系统中内置了 CA 的公钥信息，<strong>浏览器收到证书后可以使用 CA 的公钥解密 Certificate Signature 内容，得到一个 Hash 值 H2 ；</strong></li>
-<li>最后比较 H1 和 H2，如果值相同，则为可信赖的证书，否则则认为证书不可信。</li>
-</ul>
+<h2 id="对于过长报文的处理"><a href="#对于过长报文的处理" class="headerlink" title="对于过长报文的处理"></a>对于过长报文的处理</h2><p>只要frame的长度（也就是报文长度字段的值）超出了最大长度限制参数 maxFrameLength ，就会将frame丢弃，还有可能对下次的bytebuf读取有影响（没丢够字节数继续丢）:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">exceededFrameLength</span><span class="hljs-params">(ByteBuf in, <span class="hljs-type">long</span> frameLength)</span> &#123;<br>    <span class="hljs-type">long</span> <span class="hljs-variable">discard</span> <span class="hljs-operator">=</span> frameLength - in.readableBytes();    <span class="hljs-comment">//计算本frame要丢弃的字节数</span><br>    tooLongFrameLength = frameLength;<br><br>    <span class="hljs-keyword">if</span> (discard &lt; <span class="hljs-number">0</span>) &#123;    <span class="hljs-comment">// 如果丢弃了这次的frame，输入流中还有字节可以读</span><br>        in.skipBytes((<span class="hljs-type">int</span>) frameLength);    <span class="hljs-comment">//那么就直接先把本次的frame都丢弃</span><br>    &#125; <span class="hljs-keyword">else</span> &#123;<br>        discardingTooLongFrame = <span class="hljs-literal">true</span>;<span class="hljs-comment">//开启继续丢弃模式，因为这轮的字节还没丢够需要继续丢</span><br>        bytesToDiscard = discard;<br>        in.skipBytes(in.readableBytes());<br>    &#125;<br>    failIfNecessary(<span class="hljs-literal">true</span>);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">discardingTooLongFrame</span><span class="hljs-params">(ByteBuf in)</span> &#123;<br>    <span class="hljs-type">long</span> <span class="hljs-variable">bytesToDiscard</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">this</span>.bytesToDiscard;<br>    <span class="hljs-type">int</span> <span class="hljs-variable">localBytesToDiscard</span> <span class="hljs-operator">=</span> (<span class="hljs-type">int</span>) Math.min(bytesToDiscard, in.readableBytes());<br>    in.skipBytes(localBytesToDiscard);<span class="hljs-comment">//如果还有需要丢弃的字节，继续丢弃(可能是上轮造成的)</span><br>    bytesToDiscard -= localBytesToDiscard;<br>    <span class="hljs-built_in">this</span>.bytesToDiscard = bytesToDiscard;<br><br>    failIfNecessary(<span class="hljs-literal">false</span>);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+
 
                 
               </div>
@@ -346,8 +303,15 @@
     
       <span class="category-chain">
         
-  <a href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%BD%91%E7%BB%9C/" class="category-chain-item">计算机网络</a>
+  <a href="/categories/Java/" class="category-chain-item">Java</a>
   
+  
+    <span>></span>
+    
+  <a href="/categories/Java/Netty/" class="category-chain-item">Netty</a>
+  
+  
+
   
 
       </span>
@@ -363,6 +327,8 @@
       
         <a href="/tags/%E5%8E%9F%E5%88%9B/">#原创</a>
       
+        <a href="/tags/%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/">#源码阅读</a>
+      
     </div>
   
 </div>
@@ -373,8 +339,8 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>SSL/TLS四次握手流程</div>
-      <div>http://example.com/2022/11/26/SSL-TLS四次握手流程/</div>
+      <div>LengthFieldBasedFrameDecode源码阅读</div>
+      <div>http://example.com/2022/11/26/LengthFieldBasedFrameDecode源码阅读/</div>
     </div>
     <div class="license-meta">
       
@@ -418,18 +384,12 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2022/11/26/LengthFieldBasedFrameDecode%E6%BA%90%E7%A0%81%E9%98%85%E8%AF%BB/" title="LengthFieldBasedFrameDecode源码阅读">
-                        <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">LengthFieldBasedFrameDecode源码阅读</span>
-                        <span class="visible-mobile">上一篇</span>
-                      </a>
-                    
                   </article>
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2022/11/25/%E6%B5%8B%E8%AF%95%E6%96%87%E7%AB%A0/" title="测试文章">
-                        <span class="hidden-mobile">测试文章</span>
+                      <a href="/2022/11/26/SSL-TLS%E5%9B%9B%E6%AC%A1%E6%8F%A1%E6%89%8B%E6%B5%81%E7%A8%8B/" title="SSL/TLS四次握手流程">
+                        <span class="hidden-mobile">SSL/TLS四次握手流程</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
